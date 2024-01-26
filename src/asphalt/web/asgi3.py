@@ -45,7 +45,7 @@ class AsphaltMiddleware:
         if scope["type"] in ("http", "websocket"):
             async with Context() as ctx:
                 scope_type = HTTPScope if scope["type"] == "http" else WebSocketScope
-                ctx.add_resource(scope, types=[scope_type])
+                await ctx.add_resource(scope, types=[scope_type])
                 await self.app(scope, receive, send)
         else:
             await self.app(scope, receive, send)
@@ -113,7 +113,7 @@ class ASGIComponent(ContainerComponent, Generic[T_Application]):
         if not isfunction(self.original_app):
             types.append(type(self.original_app))
 
-        ctx.add_resource(self.original_app, types=types)
+        await ctx.add_resource(self.original_app, types=types)
         await super().start(ctx)
         await self.start_server(ctx)
 
@@ -138,11 +138,10 @@ class ASGIComponent(ContainerComponent, Generic[T_Application]):
         )
         server = uvicorn.Server(config)
         server.install_signal_handlers = lambda: None
-        server_task = create_task(server.serve())
+        await ctx.start_background_task(server.serve, "serve uvicorn")
         while not server.started:
             await sleep(0)
 
         yield
 
         server.should_exit = True
-        await server_task

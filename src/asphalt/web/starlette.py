@@ -18,14 +18,14 @@ class AsphaltMiddleware(BaseHTTPMiddleware):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         async with Context() as ctx:
             if scope["type"] == "http":
-                ctx.add_resource(scope, types=[HTTPScope])
+                await ctx.add_resource(scope, types=[HTTPScope])
             elif scope["type"] == "websocket":
-                ctx.add_resource(scope, types=[WebSocketScope])
+                await ctx.add_resource(scope, types=[WebSocketScope])
 
             await super().__call__(scope, receive, send)
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        current_context().add_resource(request, types=[Request])
+        await current_context().add_resource(request, types=[Request])
         return await call_next(request)
 
 
